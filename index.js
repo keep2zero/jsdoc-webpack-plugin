@@ -8,7 +8,7 @@ var fsExtra = require('fs-extra');
 
 function Plugin(translationOptions) {
   var defaultOptions = {
-    conf: './jsdoc.conf'
+    conf: './.jsdoc.json'
   };
 
   this.options = merge({}, defaultOptions, translationOptions);
@@ -22,20 +22,29 @@ function Plugin(translationOptions) {
  * @return {Promise} with an array of errors, if any
  */
 function spawnJsDoc (basePath, obj) {
+
   return new Promise((resolve, reject) => {
     var jsdocErrors = [];
+    var args = [];
     var spawnErr = false;
     var cwd = process.cwd();
     var jsDocConfTmp = path.resolve(cwd, 'jsdoc.' + Date.now() + '.conf.tmp');
     var command = /^win/.test(process.platform) ? 'jsdoc.cmd' : 'jsdoc';
+
+    
+    if(obj.readme) {
+      const readme = path.resolve(cwd, obj.readme);
+      args.push(readme);
+    }
+   
     var jsdoc;
 
     fs.writeFileSync(jsDocConfTmp, JSON.stringify(obj));
 
     if (typeof basePath === 'string') {
-      jsdoc = spawn(path.resolve(basePath, command), ['-c', jsDocConfTmp])
+      jsdoc = spawn(path.resolve(basePath, command), [...args, '-r', '-c', jsDocConfTmp])
     } else {
-      jsdoc = spawn('jsdoc', ['-c', jsDocConfTmp])
+      jsdoc = spawn('jsdoc', [...args, '-r', '-c', jsDocConfTmp])
     }
 
     jsdoc.on('error', (err) => {
